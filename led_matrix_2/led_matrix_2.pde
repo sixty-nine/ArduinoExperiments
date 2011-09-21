@@ -222,7 +222,6 @@ void setup() {
  
   Timer1.initialize(10);
   Timer1.attachInterrupt(backgroundTasks);
-
 }
 
 void loop() {
