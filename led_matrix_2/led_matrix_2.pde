@@ -13,103 +13,8 @@ int screen[3][3] =
   { 0, 0, 0 }
 };
 
-int patterns1[][3][3] = {
-
-  {
-    { 1, 0, 0 },
-    { 0, 0, 0 },
-    { 0, 0, 0 }
-  },
-  {
-    { 0, 1, 0 },
-    { 1, 0, 0 },
-    { 0, 0, 0 }
-  },
-  {
-    { 0, 0, 1 },
-    { 0, 1, 0 },
-    { 1, 0, 0 }
-  },
-  {
-    { 0, 0, 0 },
-    { 0, 0, 1 },
-    { 0, 1, 0 }
-  },
-  {
-    { 0, 0, 0 },
-    { 0, 0, 0 },
-    { 0, 0, 1 }
-  },
-  {
-    { 0, 0, 0 },
-    { 0, 0, 0 },
-    { 0, 0, 0 }
-  },
-};
-
-int patterns2[][3][3] = {
-
-  {
-    { 0, 0, 0 },
-    { 0, 1, 0 },
-    { 0, 0, 0 }
-  },
-  {
-    { 1, 1, 1 },
-    { 1, 0, 1 },
-    { 1, 1, 1 }
-  },
-  {
-    { 0, 0, 0 },
-    { 0, 1, 0 },
-    { 0, 0, 0 }
-  },
-  {
-    { 0, 0, 0 },
-    { 0, 0, 0 },
-    { 0, 0, 0 }
-  },
-};
-
-int patterns3[][3][3] = {
-
-  {
-    { 0, 0, 0 },
-    { 0, 0, 0 },
-    { 0, 0, 0 }
-  },
-  {
-    { 1, 1, 1 },
-    { 1, 1, 1 },
-    { 1, 1, 1 }
-  },
-};
-
-int patterns4[][3][3] = {
-
-  {
-    { 1, 0, 0 },
-    { 1, 0, 0 },
-    { 1, 0, 0 }
-  },
-  {
-    { 0, 1, 0 },
-    { 0, 1, 0 },
-    { 0, 1, 0 }
-  },
-  {
-    { 0, 0, 1 },
-    { 0, 0, 1 },
-    { 0, 0, 1 }
-  },
-  {
-    { 0, 0, 0 },
-    { 0, 0, 0 },
-    { 0, 0, 0 }
-  },
-};
-
 volatile int wait;
+volatile int cur_demo = 0;
 
 // ----- MATRIX MANAGEMENT --------------------
 
@@ -191,10 +96,157 @@ void animatePattern(int patterns[][3][3], int steps, int repeat = 1) {
   }
 }
 
+void blinkScreen() {
+
+  for(int i = 0; i < 3; i++) {
+    for(int j = 0; j < 3; j++) {
+      setPixel(i, j, 1);
+    }
+  }
+
+  delay(wait);
+  clearMatrix();
+  delay(wait);
+}
+
+void walkColumns() {
+  
+  int patterns[][3][3] = {
+    {
+      { 1, 0, 0 },
+      { 1, 0, 0 },
+      { 1, 0, 0 }
+    },
+    {
+      { 0, 1, 0 },
+      { 0, 1, 0 },
+      { 0, 1, 0 }
+    },
+    {
+      { 0, 0, 1 },
+      { 0, 0, 1 },
+      { 0, 0, 1 }
+    },
+    {
+      { 0, 0, 0 },
+      { 0, 0, 0 },
+      { 0, 0, 0 }
+    },
+  };
+
+  animatePattern(patterns, 4);
+}
+
+void walkRows() {
+  
+  int patterns[][3][3] = {
+    {
+      { 1, 1, 1 },
+      { 0, 0, 0 },
+      { 0, 0, 0 }
+    },
+    {
+      { 0, 0, 0 },
+      { 1, 1, 1 },
+      { 0, 0, 0 }
+    },
+    {
+      { 0, 0, 0 },
+      { 0, 0, 0 },
+      { 1, 1, 1 }
+    },
+    {
+      { 0, 0, 0 },
+      { 0, 0, 0 },
+      { 0, 0, 0 }
+    },
+  };
+
+  animatePattern(patterns, 4);
+}
+
+void walkDiagonal() {
+  
+  int patterns[][3][3] = {
+    {
+      { 1, 0, 0 },
+      { 0, 0, 0 },
+      { 0, 0, 0 }
+    },
+    {
+      { 0, 1, 0 },
+      { 1, 0, 0 },
+      { 0, 0, 0 }
+    },
+    {
+      { 0, 0, 1 },
+      { 0, 1, 0 },
+      { 1, 0, 0 }
+    },
+    {
+      { 0, 0, 0 },
+      { 0, 0, 1 },
+      { 0, 1, 0 }
+    },
+    {
+      { 0, 0, 0 },
+      { 0, 0, 0 },
+      { 0, 0, 1 }
+    },
+    {
+      { 0, 0, 0 },
+      { 0, 0, 0 },
+      { 0, 0, 0 }
+    },
+  };
+
+  animatePattern(patterns, 6);
+}
+
+void demo(int nr = 0) {
+
+  switch(nr) {
+    case 5: 
+      walkDiagonal();
+      break;
+    case 4:
+      walkRows();
+      break;
+    case 3:
+      walkColumns();
+      break;
+    case 2:
+      walkMatrixV();
+      break;
+    case 1:
+      walkMatrixH();
+      break;
+    case 0:
+    default:
+      // Blink
+      blinkScreen();
+  } 
+}
+
 // --------------------------------------------
 
+int last_state = 0;
+
 void readSensors() {
+  // Potentiometer
   wait = analogRead(A0) / 30;
+
+  // Switch
+  int reading = digitalRead(13);
+  if (reading != last_state) {
+    if (reading == 1) {
+      cur_demo++;
+      if (cur_demo > 5) { // TODO: Change here if you add more demos
+        cur_demo = 0;
+      }
+    }
+  }
+  last_state = reading;
 }
 
 void backgroundTasks() {
@@ -225,26 +277,6 @@ void setup() {
 }
 
 void loop() {
-
-  // TODO: when state change, change pattern
-  Serial.println(digitalRead(13), DEC);
-
-  // -------------------------------------------
-  animatePattern(patterns3, 2, 3); // Flash
-
-  walkMatrixH(2);
-  walkMatrixV(2);
-  
-  // -------------------------------------------
-  animatePattern(patterns3, 2, 3); // Flash
-  animatePattern(patterns4, 4, 5);
-
-  // -------------------------------------------
-  animatePattern(patterns3, 2, 3); // Flash
-  animatePattern(patterns1, 6, 5);
-
-  // -------------------------------------------
-  animatePattern(patterns3, 2, 3); // Flash
-  animatePattern(patterns2, 4, 5);
+  demo(cur_demo);
 }
 
