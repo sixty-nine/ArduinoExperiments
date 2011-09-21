@@ -1,0 +1,275 @@
+<h1>Experiments with the Arduino - Led Matrix</h1>
+
+This one was way harder to implement, I wanted to simulate a led matrix with my Arduino.
+
+<h3>
+The circuit</h3>
+
+The circuit is not so difficult, basicaly you connect the anode of each row of leds to the same digital output of the Arduino and the cathode of each column of leds to the same digital output. Each led is then connected to a unique pair of digital output.
+
+<div class="separator" style="clear: both; text-align: center;">
+<a href="http://3.bp.blogspot.com/-0AJG0KvARsM/TnnKOA2jz-I/AAAAAAAAABc/a-e6zebPtrA/s1600/circuit.png" imageanchor="1" style="margin-right:1em; margin-bottom:1em"><img border="0" height="211" width="320" src="http://3.bp.blogspot.com/-0AJG0KvARsM/TnnKOA2jz-I/AAAAAAAAABc/a-e6zebPtrA/s320/circuit.png" /></a></div>
+
+To turn a led on you just need to set the digital output for the correct row to HIGH and the output for the correct column to LOW.
+
+This means that you can turn on several leds of the same row at the same time but you cannot turn on leds of different rows at the same time. Indeed if you set several rows to HIGH and several columns to LOW, all the intersecting pixels will be turned on, and this is not what we want.
+
+A workaround for this problem is to use a technique named Row Scanning.
+
+The idea is to turn on the leds of each row alternatively. If this is done fast enough, we will not perceive any flickering and we will have the feeling that all the pixels are on at the same time.
+
+<div class="separator" style="text-align: center;">
+<a href="http://1.bp.blogspot.com/-u3OL6CcYVAo/TnnNjqirUhI/AAAAAAAAABs/-SjFU6iaArg/s1600/IMAG0035.jpg" imageanchor="1" style=""><img border="0" height="320" width="192" src="http://1.bp.blogspot.com/-u3OL6CcYVAo/TnnNjqirUhI/AAAAAAAAABs/-SjFU6iaArg/s320/IMAG0035.jpg" /></a></div>
+
+<div class="separator" style="clear: both; text-align: center;">
+<a href="http://1.bp.blogspot.com/-7v0V35QowJA/TnnNdU_0NOI/AAAAAAAAABk/YpztNGMmpW4/s1600/IMAG0036.jpg" imageanchor="1" style="margin-right:1em; margin-bottom:1em"><img border="0" height="192" width="320" src="http://1.bp.blogspot.com/-7v0V35QowJA/TnnNdU_0NOI/AAAAAAAAABk/YpztNGMmpW4/s320/IMAG0036.jpg" /></a></div>
+
+<h3>
+The code</h3>
+
+The Row Scanning mechanism described above is not so difficult to implement. I decided to use a buffer to store the actual state of the pixels. The demo does not try to change the state of the digital outputs directly. Instead it changes the state of the pixels in the buffer. Then I added a refreshScreen routine that is responsible actually set the state of the digital outputs in a loop.
+
+The problem is that the refreshScreen routine must be called periodically. This is not a problem if we don't have any delay statement in our code, because the delay statement will stop the screen refresh. Unfortunately to create a led matrix demo we definitely want to use some delay so that the user can actually see something on the led matrix.
+
+The solution is to use an interrupt library (TimerOne) that allows to set a routine as callback for a periodic interrupt. So we set refreshScreen as the callback and we have no more problems.
+
+<pre class="java" name="code">#include "TimerOne.h"
+
+const int XMIN = 2;
+const int XMAX = 4;
+
+const int YMIN = 8;
+const int YMAX = 10;
+
+int screen[3][3] = 
+{
+  { 0, 0, 0 },
+  { 0, 0, 0 },
+  { 0, 0, 0 }
+};
+
+int patterns1[][3][3] = {
+
+  {
+    { 1, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 }
+  },
+  {
+    { 0, 1, 0 },
+    { 1, 0, 0 },
+    { 0, 0, 0 }
+  },
+  {
+    { 0, 0, 1 },
+    { 0, 1, 0 },
+    { 1, 0, 0 }
+  },
+  {
+    { 0, 0, 0 },
+    { 0, 0, 1 },
+    { 0, 1, 0 }
+  },
+  {
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 1 }
+  },
+  {
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 }
+  },
+};
+
+int patterns2[][3][3] = {
+
+  {
+    { 0, 0, 0 },
+    { 0, 1, 0 },
+    { 0, 0, 0 }
+  },
+  {
+    { 1, 1, 1 },
+    { 1, 0, 1 },
+    { 1, 1, 1 }
+  },
+  {
+    { 0, 0, 0 },
+    { 0, 1, 0 },
+    { 0, 0, 0 }
+  },
+  {
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 }
+  },
+};
+
+int patterns3[][3][3] = {
+
+  {
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 }
+  },
+  {
+    { 1, 1, 1 },
+    { 1, 1, 1 },
+    { 1, 1, 1 }
+  },
+};
+
+int patterns4[][3][3] = {
+
+  {
+    { 1, 0, 0 },
+    { 1, 0, 0 },
+    { 1, 0, 0 }
+  },
+  {
+    { 0, 1, 0 },
+    { 0, 1, 0 },
+    { 0, 1, 0 }
+  },
+  {
+    { 0, 0, 1 },
+    { 0, 0, 1 },
+    { 0, 0, 1 }
+  },
+  {
+    { 0, 0, 0 },
+    { 0, 0, 0 },
+    { 0, 0, 0 }
+  },
+};
+
+
+// ----- MATRIX MANAGEMENT --------------------
+
+void refreshScreen()
+{
+  for(int i = 0; i <= 3; i++) { // For each row
+  
+    digitalWrite(i + XMIN, HIGH);
+
+    for(int j = 0; j <= 3; j++) { // For each column
+    
+      if (screen[i][j] == 1) {
+        digitalWrite(j + YMIN, LOW);
+      } else {
+        digitalWrite(j + YMIN, HIGH);
+      }
+      
+      digitalWrite(j + YMIN, HIGH);
+    }
+    
+    digitalWrite(i + XMIN, LOW);
+  }
+
+}
+
+void setPixel(int i, int j, int value = 1) {
+  screen[i][j] = value;
+}
+
+void clearMatrix() {
+  for(int i = 0; i < 3; i++) {
+    for(int j = 0; j < 3; j++) {
+      setPixel(i, j, 0);
+    }
+  }
+}
+
+void showPattern(int pattern[3][3]) {
+  for(int i = 0; i < 3; i++) {
+    for(int j = 0; j < 3; j++) {
+      setPixel(i, j, pattern[i][j]);
+    }
+  }
+}
+
+// ----- DEMO FUNCTIONS -----------------------
+
+void walkMatrixH(int wait, int repeat = 1) {
+  for(int k = 0; k < repeat; k++) {
+    for(int i = 0; i < 3; i++) {
+      for(int j = 0; j < 3; j++) {
+        clearMatrix();
+        setPixel(i, j);
+        delay(wait);
+      }
+    }
+  }
+}
+
+void walkMatrixV(int wait, int repeat = 1) {
+  for(int k = 0; k < repeat; k++) {
+    for(int i = 0; i < 3; i++) {
+      for(int j = 0; j < 3; j++) {
+        clearMatrix();
+        setPixel(j, i);
+        delay(wait);
+      }
+    }
+  }
+}
+
+void animatePattern(int wait, int patterns[][3][3], int steps, int repeat = 1) {
+
+  for(int k = 0; k < repeat; k++) {
+    for(int i = 0; i < steps; i++) {
+      showPattern(patterns[i]);
+      delay(wait);
+    }
+  }
+}
+
+// ----- MAIN PROGRAM -------------------------
+
+void setup() {               
+  
+  for(int i = XMIN; i <= XMAX; i++) {
+    pinMode(i, OUTPUT);
+  }
+  for(int i = YMIN; i <= YMAX; i++) {
+    pinMode(i, OUTPUT);
+  }
+  clearMatrix();
+
+  Timer1.initialize(10);
+  Timer1.attachInterrupt(refreshScreen);
+}
+
+void loop() {
+  
+  // -------------------------------------------
+  animatePattern(10, patterns3, 2, 3); // Flash
+
+  walkMatrixH(10, 2);
+  walkMatrixV(10, 2);
+  
+  // -------------------------------------------
+  animatePattern(10, patterns3, 2, 3); // Flash
+  animatePattern(10, patterns4, 4, 5);
+
+  // -------------------------------------------
+  animatePattern(10, patterns3, 2, 3); // Flash
+  animatePattern(10, patterns1, 6, 5);
+
+  // -------------------------------------------
+  animatePattern(10, patterns3, 2, 3); // Flash
+  animatePattern(10, patterns2, 4, 5);
+}
+
+</pre>
+<h3>
+Demo</h3>
+
+<object width="420" height="315"><param name="movie" value="http://www.youtube.com/v/6m31-1j6LCI?version=3&amp;hl=en_US">
+</param>
+<param name="allowFullScreen" value="true">
+</param>
+<param name="allowscriptaccess" value="always">
+</param>
+<embed src="http://www.youtube.com/v/6m31-1j6LCI?version=3&amp;hl=en_US" type="application/x-shockwave-flash" width="420" height="315" allowscriptaccess="always" allowfullscreen="true"></embed></object>
