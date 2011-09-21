@@ -234,7 +234,7 @@ int last_state = 0;
 
 void readSensors() {
   // Potentiometer
-  wait = analogRead(A0) / 30;
+  wait = analogRead(A0) / 50;
 
   // Switch
   int reading = digitalRead(13);
