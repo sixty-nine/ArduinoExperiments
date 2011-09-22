@@ -203,9 +203,40 @@ void walkDiagonal() {
   animatePattern(patterns, 6);
 }
 
+void demoPattern1() {
+  
+  int patterns[][3][3] = {
+    {
+      { 0, 1, 0 },
+      { 0, 1, 0 },
+      { 0, 1, 0 }
+    },
+    {
+      { 1, 0, 0 },
+      { 0, 1, 0 },
+      { 0, 0, 1 }
+    },
+    {
+      { 0, 0, 0 },
+      { 1, 1, 1 },
+      { 0, 0, 0 }
+    },
+    {
+      { 0, 0, 1 },
+      { 0, 1, 0 },
+      { 1, 0, 0 }
+    },
+  };
+
+  animatePattern(patterns, 4);
+}
+
 void demo(int nr = 0) {
 
   switch(nr) {
+    case 6:
+      demoPattern1();
+      break;
     case 5: 
       walkDiagonal();
       break;
@@ -230,7 +261,7 @@ void demo(int nr = 0) {
 
 // --------------------------------------------
 
-int last_state = 0;
+volatile int last_state = 0;
 
 void readSensors() {
   // Potentiometer
@@ -241,7 +272,7 @@ void readSensors() {
   if (reading != last_state) {
     if (reading == 1) {
       cur_demo++;
-      if (cur_demo > 5) { // TODO: Change here if you add more demos
+      if (cur_demo > 6) { // TODO: Change here if you add more demos
         cur_demo = 0;
       }
     }
@@ -258,7 +289,7 @@ void backgroundTasks() {
 
 void setup() {               
   
-  Serial.begin(9600);
+  //Serial.begin(19200);
 
   for(int i = XMIN; i <= XMAX; i++) {
     pinMode(i, OUTPUT);
@@ -272,7 +303,7 @@ void setup() {
 
   readSensors();
  
-  Timer1.initialize(10);
+  Timer1.initialize(50);
   Timer1.attachInterrupt(backgroundTasks);
 }
 
